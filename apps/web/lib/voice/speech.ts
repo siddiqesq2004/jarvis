@@ -1,6 +1,7 @@
 /**
- * Client-Side Voice Engine using Browser-Native Web Speech APIs.
+ * Client-Side Voice Engine using Browser-Native Natural Web Speech APIs.
  * 100% Free, zero latency, runs entirely client-side.
+ * Prioritizes high-definition Natural Neural human voices over robotic synthesizers.
  */
 
 export interface SpeechRecognitionHandlers {
@@ -19,7 +20,7 @@ export function cleanTextForSpeech(rawMarkdown: string): string {
   clean = clean.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
   // Strip URLs
   clean = clean.replace(/https?:\/\/\S+/g, 'link');
-  // Strip markdown headers, bullets, bold, italics
+  // Strip bullet stars and markdown headers
   clean = clean.replace(/[#*_~>]/g, '');
   return clean.trim();
 }
@@ -27,7 +28,8 @@ export function cleanTextForSpeech(rawMarkdown: string): string {
 export class BrowserVoiceEngine {
   private recognition: any = null;
   private isListening: boolean = false;
-  private synthesisVoice: SpeechSynthesisVoice | null = null;
+  private cachedVoices: SpeechSynthesisVoice[] = [];
+  private selectedVoice: SpeechSynthesisVoice | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -39,6 +41,81 @@ export class BrowserVoiceEngine {
         this.recognition.interimResults = true;
         this.recognition.lang = 'en-US';
       }
+
+      this.initVoices();
+    }
+  }
+
+  private initVoices() {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    const load = () => {
+      this.cachedVoices = window.speechSynthesis.getVoices();
+      this.selectedVoice = this.pickBestNaturalVoice();
+    };
+
+    load();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = load;
+    }
+  }
+
+  /**
+   * Selects the highest quality natural neural human voice available on the device.
+   * Filters out robotic legacy synthesizers (like legacy desktop voices).
+   */
+  public pickBestNaturalVoice(): SpeechSynthesisVoice | null {
+    if (!this.cachedVoices || this.cachedVoices.length === 0) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        this.cachedVoices = window.speechSynthesis.getVoices();
+      }
+    }
+
+    const voices = this.cachedVoices;
+    if (!voices || voices.length === 0) return null;
+
+    // Preference list for top-tier natural human voices
+    const naturalKeywords = [
+      'Natural',
+      'Neural',
+      'Jenny',
+      'Guy',
+      'Aria',
+      'Christopher',
+      'Google US English',
+      'Samantha'
+    ];
+
+    for (const kw of naturalKeywords) {
+      const match = voices.find(
+        v => v.lang.startsWith('en') && v.name.toLowerCase().includes(kw.toLowerCase())
+      );
+      if (match) return match;
+    }
+
+    // Secondary fallback: any English voice that contains "Online"
+    const onlineVoice = voices.find(
+      v => v.lang.startsWith('en') && v.name.toLowerCase().includes('online')
+    );
+    if (onlineVoice) return onlineVoice;
+
+    // Tertiary fallback: any English voice
+    return voices.find(v => v.lang.startsWith('en')) || voices[0] || null;
+  }
+
+  public getAvailableNaturalVoices(): SpeechSynthesisVoice[] {
+    if (!this.cachedVoices || this.cachedVoices.length === 0) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        this.cachedVoices = window.speechSynthesis.getVoices();
+      }
+    }
+    return this.cachedVoices.filter(v => v.lang.startsWith('en'));
+  }
+
+  public setVoice(voiceName: string) {
+    const found = this.cachedVoices.find(v => v.name === voiceName);
+    if (found) {
+      this.selectedVoice = found;
     }
   }
 
@@ -105,7 +182,10 @@ export class BrowserVoiceEngine {
   }
 
   speak(text: string, onEnd?: () => void, speed: number = 1.0, pitch: number = 1.0) {
-    if (!this.isSpeechSynthesisSupported()) return;
+    if (!this.isSpeechSynthesisSupported()) {
+      onEnd?.();
+      return;
+    }
 
     this.stopSpeaking();
 
@@ -119,14 +199,10 @@ export class BrowserVoiceEngine {
     utterance.rate = speed;
     utterance.pitch = pitch;
 
-    // Pick a natural English voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const naturalVoice = voices.find(
-      v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Online'))
-    ) || voices.find(v => v.lang.startsWith('en'));
-
-    if (naturalVoice) {
-      utterance.voice = naturalVoice;
+    // Pick best voice
+    const voiceToUse = this.selectedVoice || this.pickBestNaturalVoice();
+    if (voiceToUse) {
+      utterance.voice = voiceToUse;
     }
 
     utterance.onend = () => onEnd?.();
