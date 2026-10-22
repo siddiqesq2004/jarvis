@@ -15,7 +15,8 @@
     },
     "laptop-agent": {
       "root": "services/laptop-agent",
-      "runtime": "python"
+      "runtime": "python",
+      "entrypoint": "api/index.py"
     }
   },
   "rewrites": [
