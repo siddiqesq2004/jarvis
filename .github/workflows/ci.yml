@@ -1,0 +1,36 @@
+name: Jarvis CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-agent:
+    name: Test Laptop Agent (Python 3.13)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Run Agent Unit & Security Tests
+        run: |
+          cd services/laptop-agent
+          python -m unittest discover tests
+
+  test-web:
+    name: Test Web Availability & Safety (Node.js 22/24)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Availability Test Suite
+        run: |
+          cd apps/web
+          node --test tests/availability.test.mjs

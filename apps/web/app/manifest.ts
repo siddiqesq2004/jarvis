@@ -1,0 +1,25 @@
+import { MetadataRoute } from 'next';
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Jarvis — Personal AI Companion',
+    short_name: 'Jarvis',
+    description: 'Zero-Cost, Cloud-First, Voice-Enabled Personal AI Companion with Laptop Availability Detection',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#090d16',
+    theme_color: '#3b82f6',
+    icons: [
+      {
+        src: '/icon-192.png',
+        sizes: '192x192',
+        type: 'image/png'
+      },
+      {
+        src: '/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png'
+      }
+    ]
+  };
+}

@@ -1,0 +1,25 @@
+{
+  "name": "jarvis-companion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zero-Cost, Cloud-First, Voice-Enabled Personal AI Companion with Laptop Availability Detection",
+  "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "build": "npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web run start",
+    "lint": "npm --prefix apps/web run lint",
+    "test": "npm --prefix apps/web run test",
+    "agent:test": "cd services/laptop-agent && python -m unittest discover tests"
+  },
+  "keywords": [
+    "ai-companion",
+    "voice-assistant",
+    "zero-cost",
+    "pwa",
+    "nextjs",
+    "supabase",
+    "gemini"
+  ],
+  "author": "Mohamed Abupakkar Siddiqe S",
+  "license": "MIT"
+}
