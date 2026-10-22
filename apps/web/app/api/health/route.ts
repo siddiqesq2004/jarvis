@@ -10,6 +10,22 @@ export async function GET() {
   const device = dataStore.devices.get('default-laptop-dev') || null;
   const laptopAvailability = evaluateLaptopAvailability(device);
 
+  // Check internal Vercel laptop-agent service binding if configured
+  let internalAgentStatus = 'standalone';
+  if (process.env.LAPTOP_AGENT_SERVICE_URL) {
+    try {
+      const internalRes = await fetch(new URL('/', process.env.LAPTOP_AGENT_SERVICE_URL), {
+        signal: AbortSignal.timeout(2000)
+      });
+      if (internalRes.ok) {
+        const json = await internalRes.json();
+        internalAgentStatus = json.status || 'connected';
+      }
+    } catch {
+      internalAgentStatus = 'unreachable';
+    }
+  }
+
   return NextResponse.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -17,7 +33,8 @@ export async function GET() {
       ai_provider: provider.name,
       ai_available: providerStatus.available,
       ai_error: providerStatus.error || null,
-      memory_store_count: dataStore.memories.length
+      memory_store_count: dataStore.memories.length,
+      internal_service_binding: internalAgentStatus
     },
     laptop_bridge: {
       device_id: device?.id || 'none',
