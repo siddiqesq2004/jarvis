@@ -8,13 +8,21 @@ import re
 from typing import Dict, Any, Tuple
 from src.config import ALLOWED_WORKSPACE, logger
 
-# Strict allowlist of permitted applications that can be launched
+# Strict allowlist of permitted applications that can be launched on Windows
 PERMITTED_APPS = {
     "notepad": "notepad.exe",
     "calculator": "calc.exe",
+    "calc": "calc.exe",
+    "edge": "msedge.exe",
+    "msedge": "msedge.exe",
+    "microsoft edge": "msedge.exe",
+    "chrome": "chrome.exe",
+    "browser": "msedge.exe",
     "explorer": "explorer.exe",
-    "cmd": "cmd.exe",
+    "taskmgr": "taskmgr.exe",
+    "task manager": "taskmgr.exe",
     "terminal": "wt.exe",
+    "cmd": "cmd.exe",
     "code": "code.cmd"
 }
 
@@ -31,17 +39,14 @@ def validate_safe_path(requested_path: str) -> Tuple[bool, str]:
     if not requested_path or not isinstance(requested_path, str):
         return False, "Invalid path format"
         
-    # Prevent explicit traversal characters
     if ".." in requested_path:
         logger.warning(f"Security Alert: Path traversal attempt blocked: {requested_path}")
         return False, "Path traversal sequence (..) is forbidden"
 
-    # Resolve real path
     target = os.path.normpath(os.path.join(ALLOWED_WORKSPACE, requested_path.lstrip("/\\")))
     real_workspace = os.path.realpath(ALLOWED_WORKSPACE)
     real_target = os.path.realpath(target)
 
-    # Ensure target begins with workspace
     if not real_target.startswith(real_workspace):
         logger.warning(f"Security Alert: Target outside workspace blocked: {requested_path}")
         return False, "Target path is outside permitted workspace"

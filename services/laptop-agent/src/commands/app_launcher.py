@@ -1,7 +1,8 @@
 """
-Application and URL launcher command handler.
+Application and URL launcher command handler for Windows.
 Strictly allowlisted applications only; no arbitrary shell execution.
 """
+import os
 import subprocess
 import webbrowser
 from typing import Dict, Any
@@ -19,12 +20,16 @@ def execute_launch_app(payload: Dict[str, Any]) -> Dict[str, Any]:
         }
         
     try:
-        # Launch without shell=True to prevent shell injection
-        subprocess.Popen([executable])
+        # Use os.startfile on Windows for native apps, or subprocess.Popen
+        if hasattr(os, "startfile"):
+            os.startfile(executable)
+        else:
+            subprocess.Popen([executable])
+            
         logger.info(f"Successfully launched approved application: {executable}")
         return {
             "status": "success",
-            "message": f"Application '{app_name}' launched successfully."
+            "message": f"Application '{app_name}' launched successfully on your laptop."
         }
     except Exception as e:
         logger.error(f"Failed to launch {executable}: {e}")
